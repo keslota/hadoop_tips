@@ -1,0 +1,8 @@
+#создать переменную
+You need to use the special hiveconf for variable substitution. e.g.
+
+hive> set CURRENT_DATE='2012-09-16';
+hive> select * from foo where day >= ${hiveconf:CURRENT_DATE}
+similarly, you could pass on command line:
+
+% hive -hiveconf CURRENT_DATE='2012-09-16' -f test.hql
