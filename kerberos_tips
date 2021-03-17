@@ -1,0 +1,11 @@
+#Получить билет
+$ kinit [USER][@REALM]
+
+#Удалить полученные билеты из кэша
+$ kdestroy
+
+#Просмотреть полученные билеты
+$ klist
+
+#Get a keytab for a Kerberos principal
+ipa-getkeytab
