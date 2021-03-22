@@ -1,0 +1,4 @@
+#!/bin/bash
+kdestroy
+echo "****" | kinit
+beeline --hiveconf hive.execution.engine=spark -u "jdbc:hive2://adress.ru:10000/default;principal=hive/adress" -e "drop table u_ilina5_mv.dont_del2;create table u_ilina5_mv.dont_del2 as select * from u_ilina5_mv.sbx_deload_tb;"
