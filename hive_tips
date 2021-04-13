@@ -6,3 +6,9 @@ hive> select * from foo where day >= ${hiveconf:CURRENT_DATE}
 similarly, you could pass on command line:
 
 % hive -hiveconf CURRENT_DATE='2012-09-16' -f test.hql
+
+show create table ess_bdm_kfl.v_prodrecret; - показать скрипт создания указанной таблицы
+
+explain select * from v_prodrecret; - показать план выполнения запроса  
+
+select BLOCK OFFSET INSIDE FILE, INPUT FILE NAME, p.* from ess_bdm_kfl_aux.d_gregor_big p limit 5; - запросить первые 5 строк таблицы с  добавлением псевдостолбцов: смещение блока внутри файла и файл, в котором хранится строка
