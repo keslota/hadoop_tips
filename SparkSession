@@ -1,0 +1,93 @@
+SparkSession vs. SparkContext vs. SQLContext vs. HiveContext
+Published by  Hadoop In Real World at  February 25, 2019 Categories Tags 
+When we interview Spark developers to fill positions at our client site, we often ask our candidates to explain the difference between SparkSession, SparkContext, SQLContext and HiveContext. Sometimes we start our interview with this question. Based on the answer we get, we can easily get an idea of the candidate’s experience in Spark.
+
+In this post, we are going to help you understand the difference between SparkSession, SparkContext, SQLContext and HiveContext.
+
+Do you like us to send you a 47 page Definitive guide on Spark join algorithms? ===> Send me the guide
+
+Here is what you would see now if you are using a recent version of Spark.
+
+hirw@play2:~$ spark-shell --master yarn
+2019-02-25 22:54:38 WARN NativeCodeLoader:62 - Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+2019-02-25 22:54:53 WARN Client:66 - Neither spark.yarn.jars nor spark.yarn.archive is set, falling back to uploading libraries under SPARK_HOME.
+Spark context Web UI available at http://play2:4040
+Spark context available as 'sc' (master = yarn, app id = application_1549809566559_0002).
+Spark session available as 'spark'.
+Welcome to
+____ __
+/ __/__ ___ _____/ /__
+_\ \/ _ \/ _ `/ __/ '_/
+/___/ .__/\_,_/_/ /_/\_\ version 2.4.0
+/_/
+
+Using Scala version 2.11.12 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0_162)
+Type in expressions to have them evaluated.
+Type :help for more information.
+
+scala>
+
+You will see that the “Spark session available as ‘spark'” You can also see that the Spark context available as ‘sc’. Let’s now see what each these actually mean and represent.
+
+What is SparkContext?
+The driver program use the SparkContext to connect and communicate with the cluster and it helps in executing and coordinating the Spark job with the resource managers like YARN or Mesos.
+Using SparkContext you can actually get access to other contexts like  SQLContext and HiveContext.
+Using SparkContext we can set configuration parameters to the Spark job.
+If you are in spark-shell, a SparkContext is already available for you and is assigned to the variable sc. If you don’t have a SparkContext already, you can create one by first creating a SparkConf first.
+
+//set up the spark configuration
+val sparkConf = new SparkConf().setAppName("hirw").setMaster("yarn")
+//get SparkContext using the SparkConf
+val sc = new SparkContext(sparkConf)
+
+What is a SQLContext?
+SQLContext is your gateway to SparkSQL. Here is how you create a SQLContext using the SparkContext.
+
+// sc is an existing SparkContext.
+val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+
+Once you have the SQLContext you can start working with DataFrame, DataSet etc.
+
+What is a HiveContext?
+HiveContext is your gateway to Hive. HiveContext has all the functionalities of a SQLContext. In fact, if you look at the API documentation you can see that HiveContext extends SQLContext, meaning, it has support the functionalities that SQLContext support plus more (Hive specific functionalities)
+
+public class HiveContext
+extends SQLContext
+implements Logging
+
+Here is how we can get a HiveContext using the SparkContext
+
+// sc is an existing SparkContext.
+val sqlContext = new org.apache.spark.sql.hive.HiveContext(sc)
+
+What is a SparkSession?
+SparkSession was introduced in Spark 2.0 to make it easy for the developers so we don’t have worry about different contexts and to streamline the access to different contexts. By having access to SparkSession, we automatically have access to the SparkContext.
+
+Here is how we can create a SparkSession –
+
+val spark = SparkSession
+.builder()
+.appName("hirw-test")
+.config("spark.some.config.option", "some-value")
+.getOrCreate()
+
+SparkSession is now the new entry point of Spark that replaces the old SQLContext and HiveContext. Note that the old SQLContext and HiveContext are kept for backward compatibility.
+
+Once we have access to a SparkSession, we can start working with DataFrame and Dataset. Simply using the SparkSession to read a JSON file in to a DataFrame.
+
+val df = spark.read.json("path/to/file.json")
+
+Here is how we create a SparkSession with Hive support.
+
+val spark = SparkSession
+.builder()
+.appName("hirw-hive-test")
+.config("spark.sql.warehouse.dir", warehouseLocation)
+.enableHiveSupport()
+.getOrCreate()
+
+So if you are using Spark 2.0 and above, you will use SparkSession.
+
+There you have it. Next time when an interviewer ask the difference between SparkSession, SparkContext, SQLContext and HiveContext; you know what to answer.
