@@ -3,6 +3,7 @@ Following are the three commands which appears same but have minute differences
 hadoop fs {args}
 hadoop dfs {args}
 hdfs dfs {args}
+
   hadoop fs <args>
 FS relates to a generic file system which can point to any file systems like local, HDFS etc. So this can be used when you are dealing with different file systems such as Local FS, (S)FTP, S3, and others
 
@@ -15,4 +16,39 @@ same as 2nd i.e would work for all the operations related to HDFS and is the rec
 below is the list categorized as hdfs commands.
 
   namenode|secondarynamenode|datanode|dfs|dfsadmin|fsck|balancer|fetchdt|oiv|dfsgroups
-So even if you use hadoop dfs , it will look locate hdfs and delegate that command to hdfs dfs
+So even if you use hadoop dfs, it will look locate hdfs and delegate that command to hdfs dfs
+
+Best way to Export Hive table to CSV file
+
+Method 1 :
+hive -e 'select * from table_orc_data;' | sed 's/[[:space:]]\+/,/g' > ~/output.csv
+Pros : Simple to use, output column header but default output is tab.
+Cons : Need to convert Tab delimiter to ‘,’ which could be time consuming when exporting large file.
+
+Method 2:
+$ hadoop fs -cat hdfs://servername/user/hive/warehouse/databasename/table_csv_export_data/* > ~/output.csvCopy
+Pros : Simple, with comma as delimiter in CSV output.
+Cons : No column headers.
+
+Method 3: (My personal favorite)
+— Step 3a: Create CSV table with dummy header column as first row.
+CREATE TABLE table_csv_export_data
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+STORED as textfile
+AS
+select
+names column;
+
+— Step 3b: Now insert data actual data into table
+INSERT INTO table_csv_export_data
+SELECT
+ id
+ ,first_name
+ ,last_name
+ ,join_date
+FROM
+ table_orc_data;
+ 
+— Step 3c
+hadoop fs -cat hdfs://servername/user/hive/warehouse/databasename/table_csv_export_data/* > ~/output.csv
