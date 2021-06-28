@@ -52,3 +52,11 @@ FROM
  
 — Step 3c
 hadoop fs -cat hdfs://servername/user/hive/warehouse/databasename/table_csv_export_data/* > ~/output.csv
+
+
+hdfs dfs -getfacl [-R] <path>
+Displays the Access Control Lists (ACLs) of files and directories. If a directory has a default ACL, then getfacl also displays the default ACL.
+
+hdfs dfs -setfacl [-R] [-b |-k -m |-x <acl_spec> <path>] |[--set <acl_spec> <path>]
+Sets Access Control Lists (ACLs) of files and directories.
+
