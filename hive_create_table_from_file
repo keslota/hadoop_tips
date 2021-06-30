@@ -1,0 +1,18 @@
+drop table team_business_services.efs_inn
+
+create external table if not exists team_business_services.efs_inn (
+
+     inn string,
+     strings string
+
+)
+
+comment 'external table cod test'
+row format delimited
+fields terminated by '\t'
+stored as textfile
+location '/user/milina/sp2stage/';
+
+select * from team_business_services.efs_inn
+
+ALTER TABLE team_business_services.efs_inn SET SERDEPROPERTIES ('serialization.encoding'='UTF-8');
