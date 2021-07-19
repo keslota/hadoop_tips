@@ -282,3 +282,38 @@ sqoop import-Dmapreduce.job.queuename=default
 --warehouse-dir /user/hive/warehouse/Test
 --hive-database Test
 --hive-overwrite
+
+
+Sqoop import partition (hive to sqoop export with partition)
+
+1. create hive_temp table for load data
+create table hive_temp
+(id int, name string, age int, gender string)
+row format delimited fields terminated by ',';
+
+2. load data
+load data local inpath '/home/zicone/Documents/pig_to_hbase/stack.csv' into table hive_temp;
+
+3. create a partition table with a specific column that you want to partition.
+create table hive_part1
+(id int, name string, age int)
+partitioned by (gender string)
+row format delimited fields terminated by ',';
+
+4. add a partition in hive_temp table
+alter table hive_part1 add partition(gender='m');
+
+5. copy data from temp to hive_part table
+insert overwrite table hive_part1 partition(gender='m')
+select id, name, age from hive_temp where gender='m';
+
+6. sqoop export command
+create a table in mysql
+mysql> create table mon3 like mon2;
+sqoop export \
+--connect jdbc:mysql://localhost:3306/apr \
+--table mon3 \
+--export-dir /user/hive/warehouse/mar.db/hive_part1/gender=m \
+-m 1 \
+--username root \
+--password root
