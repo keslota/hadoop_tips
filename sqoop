@@ -1,0 +1,319 @@
+Apache Sqoop
+
+Apache Sqoop - это инструмент, предназначенный для передачи данных межжду Hadoop и реляционными базами данных или мэйнфреймами. Вы можете использовать Sqoop для импорта данных из реляционных систем управления базами данных (СУБД), таких как MySQL или Oracle или мэйнфреймов в Hadoop Distibuted File System (распределённая файловая система Hadoop, HDFS), преобразовывать данные в Hadoop MapReduce, а затем экспортировать данные обратно в СУБД.
+Выгрузка таблиц в формат Avro
+Следующая команда используется для импорта всех данных из таблицы с именем DB_010_900002.Z#BRANCH из базы данных ORACLE:
+1	sqoop import --table DB_010_900002.Z#BRANCH --connect jdbc:oracle:thin:@//connection_string --username ***** --password ****** --target-dir /data/ods/internal/EKS/src/DB_010_900001/Z_CL_BANK_N/load20180809 --num-mappers 32
+import: подкоманда предписывает Sqoop инициализировать импорт
+•	--connect <строка подключения>, --username <имя пользователя>, --password <пароль>: эти параметры соединения, использующиеся для соединения с БД. Они ничем не отличаются от параметров соединения, которые используются при подключении к БД через соединения JDBC.
+•	--table <имя таблицы>: параметр определяет таблицу, которая будет импортирована.
+•	--target-dir <путь HDFS>: параметр определяет путь в HDFS, в которую будет импортирована таблица.
+•	--num-mappers <кол-во мапперов>:параметр определяет кол-во параллелей для загрузки таблицы.
+
+Замечание
+По умолчанию данные загружаются в формат avro.
+
+Выгрузка таблиц в формат Parquet
+Следующая команда загружает таблицу APPLICANTS из схемы DB_077_000000_TRANSACT в формате parquet:
+sqoop import
+--table DB_077_000000_TRANSACT.APPLICANTS
+--connect jdbc:oracle:@//connection_string
+--username ******
+--password ******
+--target-dir /data/ods/internal/TSM/src/DB_077_000000_TRANSACT/APPLICANTS/load20180809
+--num-mappers 32
+--compression-codec=snappy --as-parquetfile
+Важно!
+В связи с ограничениями Hadoop, схемы и таблицы, в наименовании которых присутствуют символы, отличные от [A-Za-z0-9_], не загружаются. Зарегистрирован баг SQOOP-3087 на Apache.
+
+Выгрузка таблиц c условием
+Выгружать из источника можно как таблицу полностью, так и по условию.
+Следующая команда загружает таблицу AUD_DETAIL из схемы DB_060_000000_SBRF_AUDIT, где поле datetime попадет в период с 01.06.2018 по 30.06.2018:
+sqoop import
+-D oracle.sessionTimeZone=Europe/Moscow -Dmapreduce.map.memory.mb=8192
+-Dmapreduce.map.java.opts=-Xmx7200m
+-Dmapreduce.task.io.sort.mb=2400
+-libjars /opt/cloudera/parcels/CDH-5.10.0-1.cdh5.10.0.p0.41/jars/commons-lang3-3.1.jar
+-Dmapred.job.name=/tmp/sqoop_load_20180809_AUD_DETAIL
+-Dmapreduce.map.max.attempts=1
+-Doraoop.timestamp.string=false
+-Doracle.row.fetch.size=6000
+--options-file param.oracle.default
+--direct
+--as-avrodatafile
+--table DB_060_000000_SBRF_AUDIT.AUD_DETAIL
+--target-dir /data/ods/internal/FS/src/DB_060_000000/AUD_DETAIL/load20180809
+--num-mappers 32
+--where datetime>=to_date('01.06.2018','dd.mm.yyyy')and datetime<to_date('01.07.2018','dd.mm.yyyy')
+
+Выгрузка таблиц с указанием полей
+Выгружать из источника можно как таблицу полностью, так указать перечень полей для выгрузки.
+Следующая команда загружает только поле ID и AUDIT_ID из таблицы AUD_DETAIL схема DB_060_000000_SBRF_AUDIT.
+sqoop import
+-D oracle.sessionTimeZone=Europe/Moscow -Dmapreduce.map.memory.mb=8192
+-Dmapreduce.map.java.opts=-Xmx7200m
+-Dmapreduce.task.io.sort.mb=2400
+-libjars /opt/cloudera/parcels/CDH-5.10.0-1.cdh5.10.0.p0.41/jars/commons-lang3-3.1.jar
+-Dmapred.job.name=/tmp/sqoop_load_20180809_AUD_DETAIL
+-Dmapreduce.map.max.attempts=1
+-Doraoop.timestamp.string=false
+-Doracle.row.fetch.size=6000
+--options-file param.oracle.default
+--direct
+--as-avrodatafile
+--table DB_060_000000_SBRF_AUDIT.AUD_DETAIL
+--columns "ID","AUDIT_ID"
+--target-dir /data/ods/internal/FS/src/DB_060_000000/AUD_DETAIL/load20180809
+--num-mappers 32
+
+Выгрузка таблиц с конвертацией типа поля
+В случае когда необходимо выполнить преобразование типа во время загрузки таблицы можно использовать ключ --map-column-java
+Следующая команда загружает таблицу AUD_AUDITиз схемы DA_060_000000_SBRF_AUDIT c преобразованием не поддерживаемого типа CLOB в String :
+sqoop import
+-D oracle.sessionTimeZone=Europe/Moscow
+-Dmapreduce.map.java.opts=-Xmx7200m
+-Dmapreduce.task.io.sort.mb=2400 -libjars /opt/cloudera/parcels/CDH-5.10.0-1.cdh5.10.0.p0.41/jars/commons-lang3-3.1.jar
+-Dmapred.job.name=/tmp/sqoop_load_20180808_AUD_AUDIT
+-Dmapreduce.map.max.attempts=1
+-Doraoop.timestamp.string=false
+-Doracle.row.fetch.size=6000
+--options-file param.oracle.default
+--direct
+--as-avrodatafile
+--table DB_060_000000_SBRF_AUDIT.AUD_AUDIT
+--target-dir /data/ods/internal/FS/src/DB_060_000000/AUD_AUDIT_DA/load20180700
+--query "SELECT id,  subsystem_id,  function_id,  osb_number,  user_app,  CAST(decription AS VARCHAR2(2000)) decription,  event_date,  severity_id,  status,  do_number,  terbank,  ip_address,  id_mega,  gosb,  osb,  vsp FROM da_060_000000_sbrf_audit.aud_audit a WHERE event_date BETWEEN DATE '2018-07-01' AND DATE '2018-07-31' and \$CONDITIONS"
+--num-mappers 32
+--map-column-java DECRIPTION=String;
+
+Выгрузка запроса
+В случаях когда необходимо выгрузить запрос можно воспользоваться скриптом ниже.
+Следующая команда загружает таблицу AUD_DETAIL из схемы DA_060_000000_SBRF_AUDIT, где поле datetime попадет в период с 01.06.2018 по 30.06.2018:
+sqoop import
+-D oracle.sessionTimeZone=Europe/Moscow
+-Dmapreduce.map.java.opts=-Xmx7200m
+-Dmapreduce.task.io.sort.mb=2400 -libjars /opt/cloudera/parcels/CDH-5.10.0-1.cdh5.10.0.p0.41/jars/commons-lang3-3.1.jar
+-Dmapred.job.name=/tmp/sqoop_load_20180808_AUD_AUDIT
+-Dmapreduce.map.max.attempts=1
+-Doraoop.timestamp.string=false
+-Doracle.row.fetch.size=6000
+--options-file param.oracle.default
+--direct
+--as-avrodatafile
+--target-dir /data/ods/internal/FS/src/DB_060_000000/AUD_AUDIT_DA/load20180700
+--query "SELECT id,  subsystem_id,  function_id,  osb_number,  user_app,  CAST(decription AS VARCHAR2(2000)) decription,  event_date,  severity_id,  status,  do_number,  terbank,  ip_address,  id_mega,  gosb,  osb,  vsp FROM da_060_000000_sbrf_audit.aud_audit a WHERE event_date BETWEEN DATE '2018-07-01' AND DATE '2018-07-31' and \$CONDITIONS"
+--num-mappers 32;
+
+Описание ключей Sqoop Import:
+Общие аргументы
+   --connect <jdbc-uri> Строка соединения JDBC
+   - connect-manager <имя-класса> Указывается диспетчер подключений имя класса
+   - connection-param-file <свойства-файл> Указывается файл с параметрами соединения
+   --driver <имя-класса> JDBC класс драйвера
+   --hadoop-home <hdir> Переопределить $ HADOOP_MAPRED_HOME_ARG
+   --hadoop-mapred-home <dir> Переопределить $ HADOOP_MAPRED_HOME_ARG
+   --help Инструкции по использованию
+   --oracle-escaping-disabled <boolean> Отключить экранирование механизма менеджер соединения Oracle / OraOop
+-P Чтение пароля с консоли
+   --password <пароль> Пароль аутентификации
+   --password-alias <пароль-псевдоним> Псевдоним пароля учетных данных
+   --password-file <пароль-файл> Аутентификация, путь к файлу пароля
+   - relaxed-isol Использовать read-uncommitted изоляция для импорта
+   -skip-dist-cache Пропустить копирование jar файлов распределенный кеш
+   --temporary-rootdir <rootdir> Определяет временный корневой каталог для импорта
+   --username <имя_пользователя> Аутентификация, имя пользователя
+   --verbose Распечатать больше информации во время работы
+
+Аргументы управления импортом
+ --append Добавить режим импорта данных
+   --as-avrodatafile Импорт данных в файлы формата Avro
+   --as-parquetfile Импорт данных в файлы формата Parquet
+   --as-sequencefile Импорт данных в файлы формата SequenceFile
+   --as-textfile Импорт данных как простой текст (по умолчанию)
+   --autoreset-to-one-mapper Сбросить количество мапперов в один, если доступный не подходит
+   --boundary-query <statement>  <оператор> Установить границу при получении max и min значений основного ключа в запросе
+   --columns <col, col, col ...> Перечень столбцов для импорт из таблицы
+   -compression-codec <codec> Сжатие, кодек для для импорта
+   --delete-target-dir Импорт данных в режиме удалении
+   - direct Прямой режим, для быстрого импорта. ///Использовать напрямую быстро импортировать дорожка
+   --direct-split-size <n> Разделение входного потока на 'n' байт, только в прямом режиме ///Разделить входной поток каждый 'n' байт, когда импорт в прямой режим
+-e, - query <statement> Импорт результат SQL запроса
+   --fetch-size <n> Ограничение результата выборки, 'n' -кол-во возвращаемых строк и базы данных
+   --inline-lob-limit <n> Максимальный размер для LOB
+-m, - num-mappers <n> Указывается кол-во параллелей для загрузки (мапперов)
+--mapreduce-job-name <name> Указывается наименование MapReduce задачи
+   --merge-key <column> Ключевой столбец для объединения результата
+   --split-by <column-name> Столбец для разделения на параллели
+   --split-limit <size> Верхний пределстрок для разделения, типы столбца Date/Time/Timestamp и целочисленные типы. Для Date или Timestamp считается в секундах. --split-limit должно быть больше чем 0
+   - table <table-name> Наименование загружаемой таблицы
+   --target-dir <dir> Путь загрузки данных HDFS
+   --validate Подтвердить копирование с использованием сконфигурировано валидатора
+   - validation-failhandler <validation-failhandler> Имя класса для ValidationFailureHandler
+   --validation-threshold <validation-threshold> Имя класса для ValidationTh reshold
+   --validator <validator> Имя класса для Validator
+   --warehouse-dir <dir> Родительский каталог назначения HDFS
+   - where <where clause> Предложение WHERE, условие на выбираемые данные
+   -z, - compress Включить компрессию
+
+Инкрементные аргументы импорта
+--check-column <column> Исходный столбец для проверки пошагового изменение   
+--incremental <import-type> Определение типа инкрементного импорта 'append' или 'lastmodified'   
+--last-value <значение> Последнее импортированное значение в инкрементальной колонке импорта
+
+Аргументы форматирования строки вывода
+   --enclosed-by <char> Устанавливает обязательный для заполнения символ
+   --escaped-by <char> Устанавливает escape-символ
+   --fields-terminated-by <char> Устанавливает символ разделителя полей
+   -lines-terminated-by <char> Устанавливает символ конца строки
+   --mysql-delimiters Набор разделителей MySQL по умолчанию: fields:, lines: \n escaped-by: \ optionally-enclosed-by
+   --optionally-enclosed-by <char> Устанавливает символ, вмещающий поле
+
+Вводные аргументы анализа
+   - input-byed-by <char> Указывается символ ограничивающий поле
+   - input-escaped-by <char> Устанавливает escape-смвол
+   --input-fields-terminated-by <char> Устанавливает символ разделяющий поля
+   - input-lines-terminated-by <char> Устанавливает символ конца строки
+   - input-optional-enclosed-by <char> Устанавливает симво вмещающий поле
+
+Аргументы Hive
+   --create-hive-table Ошибка, если таблица существует
+   --hive-database <имя-базы данных> Имя базы данных, используется при импорте в Hive
+   --hive-delims-replacement <arg> Заменить запись в Hive \ 0x01 и разделители строк (\ n \ r) из импортированных полей строки с пользовательской строкой
+   --hive-drop-import-delims. Удаление записи Hive \ 0x01 и разделителей строк (\ n \ r) из импортированные поля строки
+   --hive-home <dir> Переопределить $ HIVE_HOME
+   --hive-import Импорт таблиц в Hive(Использует значение разделителей Hive по умолчанию, если их не задавать.)
+   --hire-overwrite Перезаписать существующие данные в таблица Hive
+   --hive-partition-key <partition-key> Устанавливает ключ партиции, используется при импорте в Hive
+   --hive-partition-value <partition-value> Устанавливает значение партиции, используется при импорте
+   --hive-table <имя-таблицы> Устанавливает имя таблицы, при импорте в Hive
+   --map-column-hive <arg> Переопределить типы данных для конкретных колонок Hive.
+
+Аргументы HBase
+   --column-family <family> Устанавливает целевое семейство столбцов для иморта данных
+   --hbase-bulkload Включает загрузку HBase
+   --hbase-create-table Если указано, происходит создание отсутствующей таблицы HBase
+   --hbase-row-key <col> Указывает, какой входной столбец использовать как строка строки
+   --hbase-table <table> Импортировать в <table> в HBase
+
+Аргументы HCatalog
+   -hcatalog-database <arg> Имя базы данных HCatalog
+   --hcatalog-home <hdir> Переопределить $ HCAT_HOME
+   -hcatalog-partition-keys <раздел-ключ> Устанавливает ключи партиции, для импорта в Hive
+   --hcatalog-partition-values <значение_раздела> Устанавливает значения  партиций, используется при импорте в Hive
+   --hcatalog-table <arg> Название таблицы HCatalog
+   --hive-home <dir> Переопределить $ HIVE_HOME
+   --hive-partition-key <partition-key> Устанавливает ключ партиции, используется при импорте в Hive
+   --hive-partition-value <partition-value> Устанавливает значение партиции, используется при импорте
+   --map-column-hive <arg> Переопределить типы данных для конкретных колонок Hive.
+
+Специфические параметры импорта в HCatalog
+	--create-hcatalog-table Создать HC-каталог перед импортом
+   --drop-and-create-hcatalog-table Удалить и создать HCкаталог до импорта
+   -hcatalog-storage-stanza <arg> Строка хранения HCatalog для созданой таблицы
+
+Аккумуляционные аргументы
+	--accumulo-batch-size <size> Размер партии в байтах
+   --accumulo-column-family <family> Устанавливает семейство целевых столбцов для импорт
+   --accumulo-create-table Если указано, создать отсутствующиие таблицы Accumulo
+   --accumulo-instance <экземпляр> имя экземпляра Accumulo.
+   --accumulo-max-latency <latency> Максимальная латентность записи в миллисекундах
+   --accumulo-password <пароль> Пароль Accumulo.
+   --accumulo-row-key <col> Определяет, какой входной столбец для использовать в качестве ключевой строки
+   --accumulo-table <table> Импортировать в <table> в Accumulo
+   --accumulo-user <пользователь> имя пользователя Accumulo.
+   --accumulo-visibility <vis> Значок видимости, который будет применяться к все импортированные строки
+   --accumulo-zookeepers <zookeepers> Список разделенных запятыми  zookeepers (хост: порт)
+
+Аргументы генерации кода
+   --bindir <dir> Выходной каталог для скомпилированных объекты
+   --class-name <имя> Устанавливает имя сгенерированного класса. Это переопределяет --package-name. В сочетании с --jar-файлом, устанавливает класс ввода.
+   --input-null-non-string <null-str> Входной пустой не-строка представление
+   --input-null-string <null-str> Вводное представление пустой строки
+   --jar-file <файл> Отключить генерацию кода; использование указанного jar
+   --map-column-java <arg> Переопределить типы данных для конкретных колонок java
+   --null-non-string <null-str> Нулевое нестроковое представление
+   --null-string <null-str> Отображение нулевой строки
+   --outdir <dir> Выходной каталог для сгенерированного кода
+   --package-name <name> Поместить автогенерированные классы в этот пакет
+
+Общие аргументы командной строки Hadoop
+-conf <файл конфигурации> указать файл конфигурации приложения
+-D <свойство = значение> использовать значение для данного свойства
+-fs <local | namenode: port> указать namenode
+-jt <local | resourcemanager: port> указать ResourceManager
+-files <список файлов, разделенных запятыми>, укажите файлы, разделенные запятыми, которые будут скопированы на кластер
+-libjars <comma separated list of jars>    specify comma separated jar files to include in the classpath.
+-libjars <список разделенных запятыми jars> указать файлы jar, разделенные запятыми, для включения в путь к классам.
+-archives <список архивов, разделенных запятыми>, чтобы указать архивы с разделителями-запятыми, которые должны быть разархивированны на ПК.
+
+Перезаписать предыдущую загрузку
+sqoop import
+-Dmapreduce.job.queuename=default
+--connect     jdbc:teradata://database_connection_string/DATABASE=database_name,TMODE=ANSI,LOGMECH=LDAP
+--username z****** --password *******
+--query "select * from ****** where \$CONDITIONS"
+--split-by "HASHBUCKET(HASHROW(key to split)) MOD 4"
+--num-mappers 4
+--hive-table hive_table_name
+--boundary-query "select 0, 3 from dbc.dbcinfo"
+--target-dir directory_name 
+--delete-target-dir
+--hive-import
+--hive-overwrite
+--driver com.teradata.jdbc.TeraDriver
+
+Добавить к прошлым записям
+sqoop import-Dmapreduce.job.queuename=default
+--connect jdbc:teradata://connection_string/DATABASE=db_name,TMODE=ANSI,LOGMECH=LDAP
+--username ****** --password ******
+--query "select * from **** where \$CONDITIONS"
+--split-by "HASHBUCKET(HASHROW(key to split)) MOD 4"
+--num-mappers 4
+--hive-import
+--hive-table guestblock.prodrptgstrgtn
+--boundary-query "select 0, 3 from dbc.dbcinfo"
+--target-dir directory_name --delete
+
+Затянуть все таблицы, которые есть в базе
+	sqoop import-all-tables
+--connect jdbc:mysql://localhost/SomeDB
+--username root
+--hive-import
+--warehouse-dir /user/hive/warehouse/Test
+--hive-database Test
+--hive-overwrite
+
+
+Sqoop import partition (hive to sqoop export with partition)
+
+1. create hive_temp table for load data
+create table hive_temp
+(id int, name string, age int, gender string)
+row format delimited fields terminated by ',';
+
+2. load data
+load data local inpath '/home/zicone/Documents/pig_to_hbase/stack.csv' into table hive_temp;
+
+3. create a partition table with a specific column that you want to partition.
+create table hive_part1
+(id int, name string, age int)
+partitioned by (gender string)
+row format delimited fields terminated by ',';
+
+4. add a partition in hive_temp table
+alter table hive_part1 add partition(gender='m');
+
+5. copy data from temp to hive_part table
+insert overwrite table hive_part1 partition(gender='m')
+select id, name, age from hive_temp where gender='m';
+
+6. sqoop export command
+create a table in mysql
+mysql> create table mon3 like mon2;
+sqoop export \
+--connect jdbc:mysql://localhost:3306/apr \
+--table mon3 \
+--export-dir /user/hive/warehouse/mar.db/hive_part1/gender=m \
+-m 1 \
+--username root \
+--password root
