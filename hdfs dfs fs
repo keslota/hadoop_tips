@@ -4,13 +4,13 @@ hadoop fs {args}
 hadoop dfs {args}
 hdfs dfs {args}
 
-  hadoop fs <args>
+hadoop fs <args>
 FS relates to a generic file system which can point to any file systems like local, HDFS etc. So this can be used when you are dealing with different file systems such as Local FS, (S)FTP, S3, and others
 
-  hadoop dfs <args>
+hadoop dfs <args>
 dfs is very specific to HDFS. would work for operation relates to HDFS. This has been deprecated and we should use hdfs dfs instead.
 
-  hdfs dfs <args>
+hdfs dfs <args>
 same as 2nd i.e would work for all the operations related to HDFS and is the recommended command instead of hadoop dfs
 
 below is the list categorized as hdfs commands.
@@ -53,10 +53,45 @@ FROM
 — Step 3c
 hadoop fs -cat hdfs://servername/user/hive/warehouse/databasename/table_csv_export_data/* > ~/output.csv
 
-
-hdfs dfs -getfacl [-R] <path>
 Displays the Access Control Lists (ACLs) of files and directories. If a directory has a default ACL, then getfacl also displays the default ACL.
+hdfs dfs -getfacl [-R] <path>
 
-hdfs dfs -setfacl [-R] [-b |-k -m |-x <acl_spec> <path>] |[--set <acl_spec> <path>]
 Sets Access Control Lists (ACLs) of files and directories.
+hdfs dfs -setfacl [-R] [-b |-k -m |-x <acl_spec> <path>] |[--set <acl_spec> <path>]
+
+Скачивание файла в локальную папку, указывается путь к файлу и путь, куда сохранить (команда -get):
+hdfs dfs -get /catalog/file_name /catalog
+Например, файл выгрузки в ММЗ: 
+hdfs dfs -get /user/team/team_k7m/development/aux/export/VDMMZOut/Packet_K7M_MMZ_IN_FROM_PIM_201904181719.zip /home/u_dl_s_k7m/
+
+Заливка файла из локальной папки, указывается путь к файлу/каталог и путь, куда залить (команда -put [-f]): 
+hdfs dfs -put [-f] /catalog/file_name /catalog
+Например, тестовый файл в папку из п.1 (/user/Ivanof-II/test_folder): 
+hdfs dfs -put  /home/Ivanof-II/test.text /user/Ivanof-II/test_folder
+Например, папку test_folder1 к пользователю Ivanof-II: 
+hdfs dfs -put /home/u_dl_s_k7m/test_folder1 /user/Ivanof-II/test_folder
+-f означает force, т.еhdfsc. перезапишет, если файлик уже есть. Необязательный параметр.
+
+Копирование файлов/каталогов в пределах HDFS, указывается путь к файлу/каталог и путь, куда копировать (команда -cp [-f]): 
+hdfs dfs -cp [-f] /catalog/file_name /catalog
+Например, тестовый файл test.txt в папку test_folder: 
+hdfs dfs -cp  /user/Ivanof-II/test.txt  /user/Ivanof-II/test_folder
+Например, папку test_folder в test_folder1: 
+hdfs dfs -cp /user/Ivanof-II/test_folder /user/Ivanof-II/test_folder1
+
+Просмотр файла (команда -cat): 
+hdfs dfs -cat /catalog/file_name
+Например, тестовый файл с предыдущего пункта: 
+hdfs dfs -cat /user/ponomarenko-di/test.txt
+
+Удаление папки таблицы/файла в HDFS (команда -rm [-skipTrash]): 
+hdfs dfs -rm [-skipTrash] /catalog/file_name
+Например, удалить все файлы в тестовой папке у пользователя Ivanof-II: 
+hdfs dfs -rm-skipTrash /user/Ivanof-II/test_folder/*
+Например, тестовую папку у пользователя Ivanof-II: 
+hdfs dfs -rm -skipTrash /user/Ivanof-II/test_folder
+Например, тестовый файл у пользователя Ivanof-II: 
+hdfs dfs -rm-skipTrash /user/Ivanof-II/test.txt
+-skipTrash означает "минуя корзину". Без указания этой команды - файл/папку отправятся в корзину (=delete). 
+С указанием - полное удаление (= shift+delete). Необязательный параметр.
 
