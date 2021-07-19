@@ -2,8 +2,8 @@ Apache Sqoop
 
 Apache Sqoop - это инструмент, предназначенный для передачи данных межжду Hadoop и реляционными базами данных или мэйнфреймами. Вы можете использовать Sqoop для импорта данных из реляционных систем управления базами данных (СУБД), таких как MySQL или Oracle или мэйнфреймов в Hadoop Distibuted File System (распределённая файловая система Hadoop, HDFS), преобразовывать данные в Hadoop MapReduce, а затем экспортировать данные обратно в СУБД.
 Выгрузка таблиц в формат Avro
-Следующая команда используется для импорта всех данных из таблицы с именем DT_010_900002.Z#BRANCH из базы данных ORACLE:
-1	sqoop import --table DT_010_900002.Z#BRANCH --connect jdbc:oracle:thin:@//socol01-scan.cgs.sbrf.ru:1521/PROD_SERVICE --username LOADER --password ****** --target-dir /data/ods/internal/EKS/src/DT_010_900001/Z_CL_BANK_N/load20180809 --num-mappers 32
+Следующая команда используется для импорта всех данных из таблицы с именем DB_010_900002.Z#BRANCH из базы данных ORACLE:
+1	sqoop import --table DB_010_900002.Z#BRANCH --connect jdbc:oracle:thin:@//connection_string --username ***** --password ****** --target-dir /data/ods/internal/EKS/src/DB_010_900001/Z_CL_BANK_N/load20180809 --num-mappers 32
 import: подкоманда предписывает Sqoop инициализировать импорт
 •	--connect <строка подключения>, --username <имя пользователя>, --password <пароль>: эти параметры соединения, использующиеся для соединения с БД. Они ничем не отличаются от параметров соединения, которые используются при подключении к БД через соединения JDBC.
 •	--table <имя таблицы>: параметр определяет таблицу, которая будет импортирована.
@@ -14,13 +14,13 @@ import: подкоманда предписывает Sqoop инициализи
 По умолчанию данные загружаются в формат avro.
 
 Выгрузка таблиц в формат Parquet
-Следующая команда загружает таблицу APPLICANTS из схемы DT_077_000000_TRANSACT в формате parquet:
+Следующая команда загружает таблицу APPLICANTS из схемы DB_077_000000_TRANSACT в формате parquet:
 sqoop import
---table DT_077_000000_TRANSACT.APPLICANTS
---connect jdbc:oracle:thin:@//socol01-scan.cgs.sbrf.ru:1521/PROD_SERVICE
---username LOADER
+--table DB_077_000000_TRANSACT.APPLICANTS
+--connect jdbc:oracle:@//connection_string
+--username ******
 --password ******
---target-dir /data/ods/internal/TSM/src/DT_077_000000_TRANSACT/APPLICANTS/load20180809
+--target-dir /data/ods/internal/TSM/src/DB_077_000000_TRANSACT/APPLICANTS/load20180809
 --num-mappers 32
 --compression-codec=snappy --as-parquetfile
 Важно!
@@ -28,7 +28,7 @@ sqoop import
 
 Выгрузка таблиц c условием
 Выгружать из источника можно как таблицу полностью, так и по условию.
-Следующая команда загружает таблицу AUD_DETAIL из схемы DA_060_000000_SBRF_AUDIT, где поле datetime попадет в период с 01.06.2018 по 30.06.2018:
+Следующая команда загружает таблицу AUD_DETAIL из схемы DB_060_000000_SBRF_AUDIT, где поле datetime попадет в период с 01.06.2018 по 30.06.2018:
 sqoop import
 -D oracle.sessionTimeZone=Europe/Moscow -Dmapreduce.map.memory.mb=8192
 -Dmapreduce.map.java.opts=-Xmx7200m
@@ -41,14 +41,14 @@ sqoop import
 --options-file param.oracle.default
 --direct
 --as-avrodatafile
---table DA_060_000000_SBRF_AUDIT.AUD_DETAIL
---target-dir /data/ods/internal/FS/src/DA_060_000000/AUD_DETAIL/load20180809
+--table DB_060_000000_SBRF_AUDIT.AUD_DETAIL
+--target-dir /data/ods/internal/FS/src/DB_060_000000/AUD_DETAIL/load20180809
 --num-mappers 32
 --where datetime>=to_date('01.06.2018','dd.mm.yyyy')and datetime<to_date('01.07.2018','dd.mm.yyyy')
 
 Выгрузка таблиц с указанием полей
 Выгружать из источника можно как таблицу полностью, так указать перечень полей для выгрузки.
-Следующая команда загружает только поле ID и AUDIT_ID из таблицы AUD_DETAIL схема DA_060_000000_SBRF_AUDIT.
+Следующая команда загружает только поле ID и AUDIT_ID из таблицы AUD_DETAIL схема DB_060_000000_SBRF_AUDIT.
 sqoop import
 -D oracle.sessionTimeZone=Europe/Moscow -Dmapreduce.map.memory.mb=8192
 -Dmapreduce.map.java.opts=-Xmx7200m
@@ -61,13 +61,13 @@ sqoop import
 --options-file param.oracle.default
 --direct
 --as-avrodatafile
---table DA_060_000000_SBRF_AUDIT.AUD_DETAIL
+--table DB_060_000000_SBRF_AUDIT.AUD_DETAIL
 --columns "ID","AUDIT_ID"
---target-dir /data/ods/internal/FS/src/DA_060_000000/AUD_DETAIL/load20180809
+--target-dir /data/ods/internal/FS/src/DB_060_000000/AUD_DETAIL/load20180809
 --num-mappers 32
 
 Выгрузка таблиц с конвертацией типа поля
-В случае когда необходимо выполнить преобразование типа во время загрузки таблицы можно использовать ключь --map-column-java
+В случае когда необходимо выполнить преобразование типа во время загрузки таблицы можно использовать ключ --map-column-java
 Следующая команда загружает таблицу AUD_AUDITиз схемы DA_060_000000_SBRF_AUDIT c преобразованием не поддерживаемого типа CLOB в String :
 sqoop import
 -D oracle.sessionTimeZone=Europe/Moscow
@@ -80,8 +80,8 @@ sqoop import
 --options-file param.oracle.default
 --direct
 --as-avrodatafile
---table DA_060_000000_SBRF_AUDIT.AUD_AUDIT
---target-dir /data/ods/internal/FS/src/DA_060_000000/AUD_AUDIT_DA/load20180700
+--table DB_060_000000_SBRF_AUDIT.AUD_AUDIT
+--target-dir /data/ods/internal/FS/src/DB_060_000000/AUD_AUDIT_DA/load20180700
 --query "SELECT id,  subsystem_id,  function_id,  osb_number,  user_app,  CAST(decription AS VARCHAR2(2000)) decription,  event_date,  severity_id,  status,  do_number,  terbank,  ip_address,  id_mega,  gosb,  osb,  vsp FROM da_060_000000_sbrf_audit.aud_audit a WHERE event_date BETWEEN DATE '2018-07-01' AND DATE '2018-07-31' and \$CONDITIONS"
 --num-mappers 32
 --map-column-java DECRIPTION=String;
@@ -100,7 +100,7 @@ sqoop import
 --options-file param.oracle.default
 --direct
 --as-avrodatafile
---target-dir /data/ods/internal/FS/src/DA_060_000000/AUD_AUDIT_DA/load20180700
+--target-dir /data/ods/internal/FS/src/DB_060_000000/AUD_AUDIT_DA/load20180700
 --query "SELECT id,  subsystem_id,  function_id,  osb_number,  user_app,  CAST(decription AS VARCHAR2(2000)) decription,  event_date,  severity_id,  status,  do_number,  terbank,  ip_address,  id_mega,  gosb,  osb,  vsp FROM da_060_000000_sbrf_audit.aud_audit a WHERE event_date BETWEEN DATE '2018-07-01' AND DATE '2018-07-31' and \$CONDITIONS"
 --num-mappers 32;
 
