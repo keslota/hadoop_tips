@@ -284,6 +284,12 @@ sqoop import-Dmapreduce.job.queuename=default
 --hive-overwrite
 
 
+Если имя поля в таблице это ключевик
+
+--query "SELECT "'"NUMBER"'" from table"
+
+
+
 Sqoop import partition (hive to sqoop export with partition)
 
 1. create hive_temp table for load data
